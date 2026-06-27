@@ -1,0 +1,62 @@
+---
+description: Response style, definition of done, and pre-code planning checklist
+alwaysApply: true
+---
+
+# Preferred Response Style
+
+When responding to tasks in this repository:
+- be concrete
+- be implementation-oriented
+- explain tradeoffs briefly
+- prefer plans before major changes
+- suggest the smallest robust change first
+- respect existing architecture unless there is a good reason to improve it
+
+If context is missing, ask for the missing file or clarify assumptions before making large changes.
+
+---
+
+# What To Do Before Writing Code
+
+When given a task, first output:
+
+1. Current understanding
+2. Relevant files to inspect
+3. Proposed implementation plan
+4. Files to change
+5. Risks / assumptions
+6. Validation approach
+
+Do this before making large or multi-file changes.
+
+---
+
+# Definition of Done
+
+A task is only done when all relevant items are true:
+
+- implementation matches the requested scope
+- code follows existing project patterns
+- no unnecessary files were changed
+- types are correct
+- lint / typecheck issues are considered
+- loading / empty / error states are handled where relevant
+- documentation is updated if needed
+- verification steps are provided
+- tax/business logic placement is correct
+- web-first UX is preserved
+
+---
+
+# What To Avoid
+
+Do not:
+- act like this is a mobile app by default
+- move tax rules into frontend code
+- create giant page components
+- add dependencies without justification
+- rewrite architecture without approval
+- mix UI, domain logic, and transport concerns in one place
+- use placeholder architecture language without concrete implementation
+- produce code that ignores the existing codebase style

@@ -1,0 +1,91 @@
+---
+description: Design system foundations, Figma translation, component inventory
+alwaysApply: false
+---
+
+# Design System Rules
+
+## Overview
+
+This design system defines the visual and interaction rules for the web-first tax filing application. The initial visual inspiration comes from a wallet-style mobile Figma reference, but this product is not a mobile wallet app. It is a **web-first tax workflow product**, so the design system must preserve the visual tone while translating mobile card aesthetics into desktop web layouts.
+
+## Visual Direction
+
+Use:
+- soft neutral/pale background
+- white or near-white cards
+- subtle shadows
+- large but controlled border radii
+- generous spacing
+- clear content hierarchy
+- restrained accent colors
+
+Do not:
+- recreate a fake phone frame in the UI
+- mirror mobile navigation structures
+- overuse floating decorative elements
+- make the app look like a finance-dribbble clone without practical usability
+
+## Figma Translation Rules
+
+The provided Figma/image is a **style reference**, not a layout spec.
+
+When translating that visual style into web:
+- preserve soft cards, spacing, tonal palette, rounded surfaces
+- convert mobile bottom navigation into desktop sidebar
+- convert single-column phone flow into multi-panel desktop layout
+- convert wallet KPI cards into filing summary / tax status / task summary cards
+- convert mobile lists into desktop tables or split panels where appropriate
+
+Never directly clone the mobile composition into a desktop browser app.
+
+## Layout System
+
+Default web layout:
+- left sidebar
+- top header
+- main content region
+- optional right summary/insight panel
+
+Recommended desktop structure:
+- 12-column grid for large screens
+- 8-column adaptation for medium screens
+- single-column fallback for narrow screens
+
+Use width intentionally:
+- forms: medium width for readability
+- tables: wide
+- summaries: narrow to medium
+- dashboard: mixed widths depending on card purpose
+
+Avoid forcing every page into the same max width.
+
+## Card, Form, and Table Patterns
+
+Use cards for KPI summaries, filing status, tax estimate preview, checklist summaries, deadline reminders, quick actions. Each card should emphasize one main thing.
+
+Tables are important for web-first tax products: filing history, uploaded documents, team/admin views, activity logs. Preserve strong row/column readability, use clear alignment, numeric columns should align consistently.
+
+Forms are first-class. Group related fields into sections, show labels clearly, provide helper text only where useful, surface validation near the field and at section/page level, allow save draft behavior, show completion/progress clearly.
+
+## Color, Typography, Motion, Radius, Shadow
+
+Use semantic color roles (`bg`, `surface`, `primary`, `success`, `warning`, `danger`, `info`). Use color sparingly and reserve strong color for state, action, or emphasis.
+
+Typography should feel modern, readable, and neutral. Use strong hierarchy between title, section, body, and metadata. Use tabular numerals where relevant for financial data. Avoid overly decorative fonts and tiny low-contrast helper text.
+
+Motion should be minimal and purposeful: loading transitions, panel expansion/collapse, toast appearance, tab or step transition, hover feedback, modal appearance. Avoid decorative motion for its own sake and flashy onboarding-like motion in serious filing flows.
+
+Radius: cards/inputs/buttons use medium radius; pills/chips use full radius; tables use subtler radius unless inside card containers.
+
+Shadow: use subtle elevation only. Prefer layered soft shadow rather than a harsh drop shadow. Use shadow to clarify surface hierarchy. Do not over-shadow every card equally.
+
+## Component Inventory
+
+Plan for or implement:
+- Layout: AppShell, Sidebar, Topbar, PageHeader, SecondaryPanel
+- Cards: StatCard, FilingStatusCard, TaxSummaryCard, ReminderCard, QuickActionCard
+- Forms: FormSection, StepNavigator, FieldGroup, ValidationSummary, InlineFieldError, SaveDraftBar
+- Documents: UploadPanel, DocumentRow, DocumentStatusBadge
+- Data display: DataTable, ActivityList, StatusBadge, SummaryBreakdown, EmptyState
+- Feedback: Toast, Banner, InlineAlert, ConfirmationDialog

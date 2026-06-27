@@ -1,0 +1,65 @@
+---
+description: Web-first UX, accessibility, and tax-specific UI expectations
+alwaysApply: false
+---
+
+# UI / UX Rules
+
+## Web-first Interaction Model
+
+This application is built for users primarily using a browser.
+
+Prefer:
+- keyboard-friendly workflows
+- table + detail patterns
+- form sections with summaries
+- right-side summary or validation panels where useful
+- save draft flows
+- step-based filing experiences
+
+Avoid:
+- gesture-dependent interaction
+- mobile-only navigation metaphors
+- cramped card-only information layouts for data-heavy screens
+
+## Tax-specific UX Expectations
+
+Users need clarity, confidence, and traceability.
+
+UI should emphasize:
+- current filing status
+- missing information
+- validation warnings
+- calculated outcomes
+- progress through workflow
+- auditability / history
+- ability to review before submit
+
+Do not optimize only for aesthetics. A beautiful screen that obscures filing state is a bad result.
+
+## Accessibility
+
+All frontend work must consider:
+- semantic structure
+- keyboard navigation
+- accessible labels
+- visible focus states
+- adequate color contrast
+- readable text sizes
+- form error clarity
+
+All UI work must consider:
+- semantic headings
+- visible focus states
+- keyboard navigation
+- sufficient color contrast
+- screen-reader friendly labels
+- descriptive errors
+- accessible table markup
+- accessible file upload flows
+
+Rules:
+- do not communicate state using color alone
+- do not make low-contrast muted text carry critical meaning
+- ensure form labels are explicit
+- ensure modal and dialog focus handling is correct

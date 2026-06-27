@@ -1,0 +1,70 @@
+---
+description: Database, queue, and code-quality standards for TaxCode
+alwaysApply: false
+---
+
+# Database Rules
+
+PostgreSQL is the source of truth.
+
+Prefer:
+- normalized core entities
+- explicit status columns
+- auditability for filing lifecycle changes
+- migrations for schema evolution
+- transactional safety for important writes
+
+Avoid:
+- undocumented schema changes
+- hidden enum meanings
+- storing critical workflow state only in untyped blobs
+- embedding business-critical logic in arbitrary SQL without documentation
+
+If schema changes are needed:
+1. explain the reason
+2. show impacted models
+3. describe migration implications
+
+---
+
+# Queue / Async Rules
+
+Use Redis + BullMQ for background work: recalculation, export generation, email notifications, scheduled reminders, document processing, sync / reconciliation jobs.
+
+All async jobs should consider: retries, idempotency, failure visibility, structured logging, clear payload contracts.
+
+Do not hide critical business steps inside opaque background jobs without documenting them.
+
+---
+
+# Code Quality Rules
+
+For any non-trivial task:
+1. inspect relevant files first
+2. explain understanding of current structure
+3. propose a plan
+4. identify files to modify
+5. mention risks or assumptions
+
+If the task affects multiple files or architecture, **plan first before editing**.
+
+Always look for existing components, utilities, API patterns, validation helpers, hooks/services. Do not create duplicate abstractions when a project pattern already exists.
+
+Prefer:
+- small focused edits
+- incremental steps
+- one feature at a time
+- isolated refactors with justification
+
+Avoid:
+- repo-wide rewrites without approval
+- changing naming conventions midstream
+- introducing a new architecture style casually
+
+## Types
+
+Strong typing is required. Prefer explicit TypeScript types, shared schema definitions, narrow well-defined interfaces, discriminated unions. Avoid `any`, silent type escapes, vague object shapes, unnecessary type assertions.
+
+## Naming
+
+Use clear, domain-oriented names (e.g. filing, filingStatus, taxSummary, validationIssue, deductionSection, supportingDocument). Avoid vague names like data, item, stuff, temp, helper2.

@@ -1,0 +1,73 @@
+---
+description: Frontend standards for the TaxCode web-first React/Next.js application
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Frontend Rules
+
+## General
+
+This is a **desktop-first React web application**. Do not produce mobile-app-style page structures unless explicitly requested.
+
+Preferred frontend patterns:
+- sidebar navigation
+- top header / toolbar
+- content area with cards, forms, tables, summaries
+- multi-step workflows
+- dashboard panels
+- empty / loading / error states
+
+Avoid:
+- bottom tab bars
+- full-screen mobile card stacks as the default web layout
+- narrow phone-width centered pages unless intentional
+- mobile-first interaction assumptions for core desktop pages
+
+## Visual Direction
+
+The reference Figma provides the visual language, not the final interaction model.
+
+Use:
+- soft neutral/pale background
+- white or near-white cards
+- subtle shadows
+- large but controlled border radii
+- generous spacing
+- clear content hierarchy
+- restrained accent colors
+
+Do not:
+- recreate a fake phone frame in the UI
+- mirror mobile navigation structures
+- overuse floating decorative elements
+- make the app look like a finance-dribbble clone without practical usability
+
+## Component Preferences
+
+Prefer reusable components for: app shell, sidebar, header, stats cards, filing status cards, summary panels, form sections, data tables, upload panels, empty states, validation summaries.
+
+Always split complex screens into components. Do not leave large pages as one giant JSX file.
+
+## Frontend State
+
+Prefer:
+- local component state for isolated UI state
+- form libraries for form state
+- server-state tools for async remote data if already present in the project
+- predictable typed APIs
+
+Avoid:
+- unnecessary global state
+- duplicated derived state
+- deeply nested prop drilling when composition or context is cleaner
+- putting business rules directly in presentational components
+
+## Data Fetching
+
+Prefer server-safe and framework-consistent patterns. Do not invent ad hoc client fetching if the codebase already has a pattern.
+
+Avoid:
+- inconsistent fetching styles across pages
+- embedding large fetch logic directly in UI components
+- mixing unrelated data concerns in one component

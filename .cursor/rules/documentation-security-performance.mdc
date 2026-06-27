@@ -1,0 +1,51 @@
+---
+description: Documentation, security, and performance rules for TaxCode
+alwaysApply: false
+---
+
+# Documentation Rules
+
+When making meaningful architectural or structural changes:
+- update README if setup changes
+- update docs if workflow changes
+- document new modules, new environment variables, new queue jobs, new schema assumptions
+
+Prefer short, useful documentation over long vague documentation.
+
+---
+
+# Security Rules
+
+Never:
+- hardcode secrets
+- commit API keys
+- expose internal-only endpoints casually
+- skip auth/authorization considerations on filing or document endpoints
+
+Always consider:
+- sensitive tax data handling
+- file upload safety
+- permission boundaries
+- audit logs for critical state changes
+
+Security boundaries:
+- frontend never stores secrets
+- backend enforces authorization
+- tax engine only receives the data it needs
+- logs must avoid leaking sensitive values where possible
+
+---
+
+# Performance Rules
+
+Prefer:
+- paginated data views
+- selective data fetching
+- memoization only where justified
+- efficient table rendering for large datasets
+- background jobs for slow tasks
+
+Avoid:
+- fetching everything by default
+- over-rendering large form trees
+- putting heavy calculations in the browser if they belong in Rust/backend

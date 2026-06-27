@@ -1,0 +1,47 @@
+---
+description: Core mission and stack for the TaxCode web-first tax filing application
+alwaysApply: true
+---
+
+# Mission
+
+This repository is a **web-first tax filing application**.
+
+It is not a mobile wallet app. The visual direction is inspired by a mobile wallet Figma reference (soft light-gray / pale-blue background, white cards, large radius, subtle shadows), but the final product must be a **desktop-first web application** for tax workflows: forms, tables, filing flows, document uploads, status tracking, admin/dashboard views.
+
+Always preserve the visual language from the Figma reference, but do **not** directly copy mobile layout patterns into the web UI.
+
+---
+
+## Core Stack
+
+Use and optimize for this stack unless explicitly told otherwise:
+
+- Frontend: Next.js + React + TypeScript
+- Styling: Tailwind CSS
+- Backend: Node.js + Fastify or NestJS
+- Tax engine: Rust
+- Database: PostgreSQL
+- Queue / async jobs: Redis + BullMQ
+- Frontend deployment: Vercel
+- API deployment: Railway / Fly.io / AWS
+
+Do not introduce new frameworks unless there is a strong project-specific reason.
+
+---
+
+## Product Principles
+
+Always optimize for these priorities:
+
+1. Web-first usability
+2. Tax workflow clarity
+3. Safe and maintainable architecture
+4. Reusable components
+5. Strong typing and predictable state
+6. Clean separation between UI, business logic, and tax calculation logic
+
+When in doubt:
+- prefer clarity over cleverness
+- prefer maintainability over novelty
+- prefer incremental delivery over large rewrites

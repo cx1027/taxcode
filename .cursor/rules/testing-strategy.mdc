@@ -1,0 +1,43 @@
+---
+description: Testing standards for frontend, backend, and Rust tax engine
+alwaysApply: false
+---
+
+# Testing Rules
+
+For important logic, always consider tests.
+
+Prioritize tests for:
+- tax calculation logic
+- filing status transitions
+- validation behavior
+- API contracts
+- critical form behavior
+- async job handlers
+
+When implementing non-trivial features, explain:
+- what should be tested
+- what edge cases matter
+- whether tests were added or deferred
+
+Do not claim a feature is done if critical logic is unverified.
+
+---
+
+## Testing Strategy
+
+### Frontend
+- component tests where valuable
+- end-to-end tests for critical filing flows
+- accessibility checks for primary pages
+
+### Backend
+- API contract tests
+- service-level tests for workflow transitions
+- integration tests for filing + calculation flow
+
+### Rust Engine
+- rule and calculation tests
+- edge case coverage
+- deterministic regression tests
+- versioned rule behavior verification

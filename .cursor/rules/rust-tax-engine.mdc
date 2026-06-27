@@ -1,0 +1,38 @@
+---
+description: Rust tax engine boundaries and design preferences
+alwaysApply: false
+---
+
+# Rust Tax Engine Rules
+
+Rust is used for **tax core logic**, not general product UI or normal CRUD.
+
+Rust responsibilities:
+- tax calculations
+- validation engine
+- rule evaluation
+- warning generation
+- summary breakdowns
+- versioned tax rule execution
+- batch recalculation
+
+Rust should not own:
+- user management, session/auth, page rendering
+- generic dashboard CRUD
+- unrelated business workflow UI logic
+
+## Rust Design Preferences
+
+Prefer:
+- strong types
+- explicit enums for statuses and rule outcomes
+- clear input/output schemas
+- well-defined error models
+- deterministic behavior
+- high test coverage for calculation logic
+
+Avoid:
+- loosely shaped JSON everywhere internally
+- hidden conversions
+- mixing transport and domain models carelessly
+- pushing frontend concerns into the engine

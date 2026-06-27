@@ -1,0 +1,57 @@
+---
+description: Backend modular monolith standards for TaxCode Node.js API
+alwaysApply: false
+---
+
+# Backend Rules
+
+## General
+
+The backend starts as a **modular monolith** unless explicitly instructed to split services.
+
+Business backend responsibilities:
+- auth, users, organizations
+- filings, documents, notifications
+- audit logs
+- tax-engine gateway
+- job orchestration
+
+Do not prematurely split into microservices.
+
+## Architecture
+
+Keep a clean separation between:
+- HTTP/API layer
+- application/service layer
+- domain logic
+- persistence/data access
+- external integrations
+
+Avoid putting all logic in controllers/routes.
+
+## API Design
+
+Prefer:
+- explicit, typed request/response contracts
+- validation at the boundary
+- consistent error formats
+- idempotent mutation endpoints where relevant
+- clear status transitions for filing workflows
+
+Avoid:
+- ambiguous endpoints
+- hidden side effects
+- mixing unrelated domain concerns in one handler
+- fat controllers
+
+## Business Logic
+
+Node backend handles:
+- user workflow orchestration
+- persistence
+- auth / permissions
+- document and filing lifecycle
+- calling the Rust tax engine
+- queueing background jobs
+
+Do not implement tax calculation rules directly in frontend pages. Do not duplicate tax logic across frontend and backend.
