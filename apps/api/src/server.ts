@@ -1,18 +1,26 @@
-import { buildApp } from "./index";
+import { buildApp } from "./app";
+import { env } from "./config";
 
-async function main() {
+async function start() {
   const app = await buildApp();
 
   try {
-    const address = await app.listen({
-      port: Number(process.env.PORT ?? 3001),
-      host: "0.0.0.0",
-    });
-    app.log.info(`TaxCode API running at ${address}`);
+    await app.listen({ port: env.PORT, host: env.HOST });
+    app.log.info(`Server running on http://${env.HOST}:${env.PORT}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
   }
+
+  // Graceful shutdown
+  const shutdown = async (signal: string) => {
+    app.log.info(`${signal} received, shutting down...`);
+    await app.close();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
 }
 
-main();
+start();

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
-import type { FilingStatus } from "@taxcode/shared-types";
+import type { FilingStatus } from "@/lib/schemas/filing";
 
 interface StatusBadgeProps {
   status: FilingStatus;

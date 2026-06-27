@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { CheckCircle2, AlertCircle, Clock, ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { MOCK_FILINGS } from "@/lib/mock-data";
-import type { FilingStatus } from "@taxcode/shared-types";
+import type { FilingStatus } from "@/lib/schemas/filing";
 
 const STATUS_STEP_ORDER: FilingStatus[] = [
   "draft",

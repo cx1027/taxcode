@@ -1,11 +1,7 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { FileText, Mail, Lock, CheckCircle } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "Create Account — TaxCode",
-  description: "Create your TaxCode account to start filing",
-};
 
 const FEATURES = [
   "Unlimited filing drafts",

@@ -1,11 +1,7 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { FileText, Mail, Lock, Eye, EyeOff } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "Sign In — TaxCode",
-  description: "Sign in to your TaxCode account",
-};
 
 export default function LoginPage() {
   return (
