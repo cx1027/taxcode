@@ -1,56 +1,175 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Phone, MapPin, Receipt, UserCheck, ArrowRight } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { InlineFieldError } from "@/components/forms/validation-summary";
+import { ArrowRight, ArrowLeft, Receipt, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-const OnboardingSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  filingStatus: z.string().min(1, "Filing status is required"),
-  irdNumber: z.string().regex(/^\d{3}-\d{3}-\d{3}$/, "IRD number must be in format XXX-XXX-XXX"),
-  withholdingAllowance: z.number().min(0).max(10),
-  estimatedWithholding: z.number().min(0),
-});
+// ============================================================
+// Types
+// ============================================================
+type IncomeSource =
+  | "paye_salary"
+  | "nz_interest"
+  | "nz_dividends"
+  | "investment_property"
+  | "shareholder_employee_no_tax"
+  | "partnership_income"
+  | "ltc_company_income"
+  | "nz_estate_trust_income"
+  | "boarder_income"
+  | "maori_authority_distributions";
 
-type OnboardingData = z.infer<typeof OnboardingSchema>;
+interface OnboardingData {
+  irdNumber: string;
+  isCompanyOrPartner: boolean;
+  hasBlockedIncome: boolean;
+  selectedIncomeSources: IncomeSource[];
+}
 
+// ============================================================
+// Constants
+// ============================================================
+const BLOCKED_INCOME_LABELS = [
+  "Income earned outside NZ",
+  "Short-term rental of primary residence",
+  "Crypto currency",
+  "Royalties",
+];
+
+const INCOME_SOURCE_OPTIONS: { value: IncomeSource; label: string }[] = [
+  { value: "paye_salary", label: "PAYE / Salary" },
+  { value: "nz_interest", label: "NZ Interest" },
+  { value: "nz_dividends", label: "NZ Dividends" },
+  { value: "investment_property", label: "Investment Property" },
+  { value: "shareholder_employee_no_tax", label: "Shareholder-employee salary with no tax deducted" },
+  { value: "partnership_income", label: "Partnership income" },
+  { value: "ltc_company_income", label: "Look through company income (LTC)" },
+  { value: "nz_estate_trust_income", label: "NZ Estate or trust income" },
+  { value: "boarder_income", label: "Boarder income" },
+  { value: "maori_authority_distributions", label: "Māori Authority distributions" },
+];
+
+const STEPS = [
+  { id: 1, label: "IRD Number" },
+  { id: 2, label: "Registration Check" },
+  { id: 3, label: "Income Verification" },
+  { id: 4, label: "Income Sources" },
+];
+
+// ============================================================
+// Helpers
+// ============================================================
+function validateIrdNumber(value: string): boolean {
+  return /^\d{3}-\d{3}-\d{3}$/.test(value.trim());
+}
+
+// ============================================================
+// Page Component
+// ============================================================
 export default function OnboardingPage() {
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isDirty },
-  } = useForm<OnboardingData>({
-    resolver: zodResolver(OnboardingSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      address: "",
-      filingStatus: "single",
-      irdNumber: "",
-      withholdingAllowance: 1,
-      estimatedWithholding: 0,
-    },
-  });
+  // Step 1 — IRD Number
+  const [irdNumber, setIrdNumber] = useState("");
+  const [irdBlurred, setIrdBlurred] = useState(false);
+  const irdRef = useRef<HTMLInputElement>(null);
 
-  const onSubmit = async (data: OnboardingData) => {
+  // Step 2 — Company/Partner
+  const [isCompanyOrPartner, setIsCompanyOrPartner] = useState<boolean | null>(null);
+
+  // Step 3 — Blocked income check
+  const [blockedIncomes, setBlockedIncomes] = useState<Set<string>>(new Set());
+
+  // Step 4 — Income sources
+  const [selectedIncomeSources, setSelectedIncomeSources] = useState<Set<IncomeSource>>(new Set());
+
+  // Sync IRD input value with state (handles browser autofill / playwright)
+  useEffect(() => {
+    const input = irdRef.current;
+    if (!input) return;
+    const sync = () => {
+      const val = input.value;
+      setIrdNumber((prev) => (prev !== val ? val : prev));
+    };
+    input.addEventListener("input", sync);
+    input.addEventListener("change", sync);
+    // Also sync on mount in case of autofill
+    const timer = setTimeout(sync, 100);
+    return () => {
+      input.removeEventListener("input", sync);
+      input.removeEventListener("change", sync);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // Derived
+  const hasBlockedIncome = blockedIncomes.size > 0;
+
+  const isStepValid = (() => {
+    switch (currentStep) {
+      case 1:
+        return validateIrdNumber(irdNumber);
+      case 2:
+        return isCompanyOrPartner === false; // only "No" is valid to proceed
+      case 3:
+        return !hasBlockedIncome; // valid only if no blocked income selected
+      case 4:
+        return selectedIncomeSources.size > 0;
+      default:
+        return false;
+    }
+  })();
+
+  // Handlers
+  const handleNext = useCallback(() => {
+    if (!isStepValid) return;
+    if (currentStep < 4) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  }, [currentStep, isStepValid]);
+
+  const handleBack = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep((prev) => prev - 1);
+    }
+  }, [currentStep]);
+
+  const handleToggleBlockedIncome = useCallback((label: string) => {
+    setBlockedIncomes((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleIncomeSource = useCallback((source: IncomeSource) => {
+    setSelectedIncomeSources((prev) => {
+      const next = new Set(prev);
+      if (next.has(source)) {
+        next.delete(source);
+      } else {
+        next.add(source);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Store onboarding data locally for now
+      const data: OnboardingData = {
+        irdNumber,
+        isCompanyOrPartner: isCompanyOrPartner ?? false,
+        hasBlockedIncome,
+        selectedIncomeSources: Array.from(selectedIncomeSources),
+      };
       localStorage.setItem("taxcode-onboarding", JSON.stringify(data));
-      // Redirect to dashboard
       router.push("/dashboard");
     } catch (error) {
       console.error("Onboarding failed:", error);
@@ -58,6 +177,9 @@ export default function OnboardingPage() {
     }
   };
 
+  // ============================================================
+  // Render
+  // ============================================================
   return (
     <div className="flex min-h-screen bg-background">
       {/* Left branding panel */}
@@ -70,33 +192,48 @@ export default function OnboardingPage() {
             Welcome to TaxCode
           </h1>
           <p className="mt-3 text-base text-sidebar-foreground/70 leading-relaxed">
-            Let&apos;s set up your account. We&apos;ll need some basic information to help you file your taxes efficiently.
+            Let&apos;s set up your tax profile. This will help us determine your filing eligibility.
           </p>
         </div>
+
+        {/* Step indicators */}
         <div className="space-y-4">
           <p className="text-sm font-medium text-sidebar-foreground/50 uppercase tracking-wider">
-            What happens next
+            Progress
           </p>
           <ul className="space-y-3">
-            <li className="flex items-center gap-3 text-sm text-sidebar-foreground/80">
-              <ArrowRight className="h-4 w-4 flex-shrink-0 text-green-500" />
-              Complete your profile information
-            </li>
-            <li className="flex items-center gap-3 text-sm text-sidebar-foreground/80">
-              <ArrowRight className="h-4 w-4 flex-shrink-0 text-green-500" />
-              Add your tax profile details
-            </li>
-            <li className="flex items-center gap-3 text-sm text-sidebar-foreground/80">
-              <ArrowRight className="h-4 w-4 flex-shrink-0 text-green-500" />
-              Start filing your taxes
-            </li>
+            {STEPS.map((step) => (
+              <li
+                key={step.id}
+                className={`flex items-center gap-3 text-sm transition-colors ${
+                  step.id === currentStep
+                    ? "text-sidebar-foreground font-medium"
+                    : step.id < currentStep
+                    ? "text-green-500"
+                    : "text-sidebar-foreground/40"
+                }`}
+              >
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                    step.id === currentStep
+                      ? "bg-primary text-primary-foreground"
+                      : step.id < currentStep
+                      ? "bg-green-500 text-white"
+                      : "bg-sidebar-foreground/20 text-sidebar-foreground/60"
+                  }`}
+                >
+                  {step.id < currentStep ? "✓" : step.id}
+                </span>
+                {step.label}
+              </li>
+            ))}
           </ul>
         </div>
       </div>
 
       {/* Right form panel */}
       <div className="flex flex-1 items-center justify-center p-8">
-        <div className="w-full max-w-2xl space-y-8">
+        <div className="w-full max-w-xl space-y-8">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
@@ -105,185 +242,226 @@ export default function OnboardingPage() {
             <span className="text-xl font-semibold text-foreground">TaxCode</span>
           </div>
 
+          {/* Step title */}
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Complete your profile
-            </h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Tell us about yourself so we can personalize your tax filing experience.
+            <p className="text-sm font-medium text-muted-foreground">
+              Step {currentStep} of 4
             </p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+              {STEPS[currentStep - 1].label}
+            </h2>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* Personal Information */}
+          {/* ========== STEP 1: IRD Number ========== */}
+          {currentStep === 1 && (
             <div className="rounded-card border border-border bg-card p-6 space-y-6">
-              <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                Personal Information
-              </h3>
-              
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-foreground">
-                    First Name *
-                  </label>
-                  <input
-                    {...register("firstName")}
-                    id="firstName"
-                    className="mt-1 w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  <InlineFieldError message={errors.firstName?.message} />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-foreground">
-                    Last Name *
-                  </label>
-                  <input
-                    {...register("lastName")}
-                    id="lastName"
-                    className="mt-1 w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  <InlineFieldError message={errors.lastName?.message} />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                  Email Address *
-                </label>
-                <div className="mt-1 flex rounded-input border border-border bg-surface">
-                  <div className="flex items-center px-3 text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <input
-                    {...register("email")}
-                    id="email"
-                    type="email"
-                    className="w-full rounded-r-input border-0 bg-transparent px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <InlineFieldError message={errors.email?.message} />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-foreground">
-                    Phone Number
-                  </label>
-                  <div className="mt-1 flex rounded-input border border-border bg-surface">
-                    <div className="flex items-center px-3 text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                    </div>
-                    <input
-                      {...register("phone")}
-                      id="phone"
-                      type="tel"
-                      placeholder="+64 21 123 4567"
-                      className="w-full rounded-r-input border-0 bg-transparent px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-                  <InlineFieldError message={errors.phone?.message} />
-                </div>
-                <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-foreground">
-                    Mailing Address
-                  </label>
-                  <div className="mt-1 flex rounded-input border border-border bg-surface">
-                    <div className="flex items-center px-3 text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                    </div>
-                    <input
-                      {...register("address")}
-                      id="address"
-                      placeholder="123 Main St, Auckland 1010"
-                      className="w-full rounded-r-input border-0 bg-transparent px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-                  <InlineFieldError message={errors.address?.message} />
-                </div>
-              </div>
-            </div>
-
-            {/* Tax Profile */}
-            <div className="rounded-card border border-border bg-card p-6 space-y-6">
-              <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-muted-foreground" />
-                Tax Profile
-              </h3>
-
-              <div>
-                <label htmlFor="filingStatus" className="block text-sm font-medium text-foreground">
-                  Filing Status *
-                </label>
-                <div className="mt-1 flex rounded-input border border-border bg-surface">
-                  <div className="flex items-center px-3 text-muted-foreground">
-                    <UserCheck className="h-4 w-4" />
-                  </div>
-                  <select
-                    {...register("filingStatus")}
-                    id="filingStatus"
-                    className="w-full rounded-r-input border-0 bg-transparent px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="single">Single</option>
-                    <option value="married_joint">Married Filing Jointly</option>
-                    <option value="married_separate">Married Filing Separately</option>
-                    <option value="head_of_household">Head of Household</option>
-                  </select>
-                </div>
-                <InlineFieldError message={errors.filingStatus?.message} />
-              </div>
-
               <div>
                 <label htmlFor="irdNumber" className="block text-sm font-medium text-foreground">
-                  IRD Number *
+                  IRD Number <span className="text-red-500">*</span>
                 </label>
-                <input
-                  {...register("irdNumber")}
-                  id="irdNumber"
-                  placeholder="123-456-789"
-                  className="mt-1 w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-                <InlineFieldError message={errors.irdNumber?.message} />
+                <div className="mt-1 flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <input
+                    ref={irdRef}
+                    id="irdNumber"
+                    value={irdNumber}
+                    onChange={(e) => setIrdNumber(e.target.value)}
+                    onBlur={() => setIrdBlurred(true)}
+                    placeholder="123-456-789"
+                    className="w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                {irdBlurred && irdNumber && !validateIrdNumber(irdNumber) && (
+                  <p className="mt-1 text-xs text-red-500">
+                    IRD number must be in format XXX-XXX-XXX
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Enter your 9-digit IRD number in the format XXX-XXX-XXX
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ========== STEP 2: Company/Partner Check ========== */}
+          {currentStep === 2 && (
+            <div className="rounded-card border border-border bg-card p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Are you registering as a company or partnership? <span className="text-red-500">*</span>
+                </label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  TaxCode currently supports individual tax filing only.
+                </p>
+                <div className="mt-4 flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsCompanyOrPartner(false)}
+                    className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+                      isCompanyOrPartner === false
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border text-muted-foreground hover:border-border/80"
+                    }`}
+                  >
+                    No, I&apos;m an individual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCompanyOrPartner(true)}
+                    className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+                      isCompanyOrPartner === true
+                        ? "border-red-500 bg-red-50 text-red-600"
+                        : "border-border text-muted-foreground hover:border-border/80"
+                    }`}
+                  >
+                    Yes, company/partnership
+                  </button>
+                </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="withholdingAllowance" className="block text-sm font-medium text-foreground">
-                    Withholding Allowance
-                  </label>
-                  <input
-                    {...register("withholdingAllowance", { valueAsNumber: true })}
-                    id="withholdingAllowance"
-                    type="number"
-                    min="0"
-                    max="10"
-                    className="mt-1 w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  <InlineFieldError message={errors.withholdingAllowance?.message} />
+              {/* Blocked message */}
+              {isCompanyOrPartner === true && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700">
+                      Registration not available
+                    </p>
+                    <p className="mt-1 text-xs text-red-600">
+                      TaxCode currently does not support company or partnership tax filing.
+                      You cannot proceed with registration as a company or partnership.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="estimatedWithholding" className="block text-sm font-medium text-foreground">
-                    Estimated Withholding ($)
-                  </label>
-                  <input
-                    {...register("estimatedWithholding", { valueAsNumber: true })}
-                    id="estimatedWithholding"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="mt-1 w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  <InlineFieldError message={errors.estimatedWithholding?.message} />
+              )}
+            </div>
+          )}
+
+          {/* ========== STEP 3: Income Verification ========== */}
+          {currentStep === 3 && (
+            <div className="rounded-card border border-border bg-card p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Do you have any of the following income types?
+                </label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Select all that apply. Some income types may affect your eligibility.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {BLOCKED_INCOME_LABELS.map((label) => (
+                    <label
+                      key={label}
+                      className={`flex items-center gap-3 rounded-lg border-2 px-4 py-3 cursor-pointer transition-all ${
+                        blockedIncomes.has(label)
+                          ? "border-red-400 bg-red-50"
+                          : "border-border hover:border-border/80"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={blockedIncomes.has(label)}
+                        onChange={() => handleToggleBlockedIncome(label)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span className={`text-sm ${blockedIncomes.has(label) ? "text-red-700 font-medium" : "text-foreground"}`}>
+                        {label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Blocked message */}
+              {hasBlockedIncome && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700">
+                      Registration not available
+                    </p>
+                    <p className="mt-1 text-xs text-red-600">
+                      TaxCode currently does not support filing with the following income types:{" "}
+                      {Array.from(blockedIncomes).join(", ")}.
+                      You cannot proceed with registration.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========== STEP 4: Income Sources ========== */}
+          {currentStep === 4 && (
+            <div className="rounded-card border border-border bg-card p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Select your income sources <span className="text-red-500">*</span>
+                </label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Select all that apply. Choose at least one income source.
+                </p>
+                <div className="mt-4 space-y-2">
+                  {INCOME_SOURCE_OPTIONS.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-center gap-3 rounded-lg border-2 px-4 py-3 cursor-pointer transition-all ${
+                        selectedIncomeSources.has(option.value)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-border/80"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedIncomeSources.has(option.value)}
+                        onChange={() => handleToggleIncomeSource(option.value)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span className={`text-sm ${selectedIncomeSources.has(option.value) ? "text-primary font-medium" : "text-foreground"}`}>
+                        {option.label}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Submit */}
-            <div className="flex items-center justify-end gap-3">
+          {/* ========== Navigation Buttons ========== */}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleBack}
+              disabled={currentStep === 1}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-opacity hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+
+            {currentStep < 4 ? (
               <button
-                type="submit"
-                disabled={isSubmitting || !isDirty}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-soft transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                type="button"
+                onClick={handleNext}
+                disabled={!isStepValid}
+                className={`inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium shadow-soft transition-all ${
+                  isStepValid
+                    ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                Next
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!isStepValid || isSubmitting}
+                className={`inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium shadow-soft transition-all ${
+                  isStepValid && !isSubmitting
+                    ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
                 {isSubmitting ? (
                   <>
@@ -296,12 +474,12 @@ export default function OnboardingPage() {
                 ) : (
                   <>
                     Complete Setup
-                    <ArrowRight className="h-4 w-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                   </>
                 )}
               </button>
-            </div>
-          </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
