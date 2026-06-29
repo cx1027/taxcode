@@ -176,6 +176,9 @@ export default function OnboardingPage() {
   // Step 15 — Agreement
   const [agreementAccepted, setAgreementAccepted] = useState(false);
 
+  // Finish screen
+  const [showFinishScreen, setShowFinishScreen] = useState(false);
+
   // Sync IRD input value with state
   useEffect(() => {
     const input = irdRef.current;
@@ -311,11 +314,16 @@ export default function OnboardingPage() {
         agreementAccepted,
       };
       localStorage.setItem("taxcode-onboarding", JSON.stringify(data));
-      router.push("/dashboard");
+      setShowFinishScreen(true);
     } catch (error) {
       console.error("Onboarding failed:", error);
       setIsSubmitting(false);
     }
+  };
+
+  const handleFinishRegistration = () => {
+    alert("Congrats! Your registration is successful! 🎉");
+    router.push("/dashboard");
   };
 
   const totalSteps = 15;
@@ -377,6 +385,55 @@ export default function OnboardingPage() {
       {/* Right form panel */}
       <div className="flex flex-1 items-start justify-center p-8 overflow-y-auto max-h-screen">
         <div className="w-full max-w-xl space-y-6 pb-8">
+
+          {/* ========== FINISH REGISTRATION SCREEN ========== */}
+          {showFinishScreen && (
+            <div className="space-y-6 pt-8">
+              <div className="rounded-card border border-border bg-card p-8 space-y-6 text-center">
+                <div className="flex justify-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                    <CheckCircle2 className="h-10 w-10 text-green-600" />
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                    You&apos;re All Set!
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                    Your tax profile has been successfully created. Click the button below to complete your registration and start filing your taxes.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-surface p-4 text-left space-y-2">
+                  <p className="text-xs font-medium text-foreground uppercase tracking-wider">Profile Summary</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <span>IRD: {irdNumber}</span>
+                    <span>Job: {jobTitle}</span>
+                    <span>Income: {selectedIncomeSources.size} source(s)</span>
+                    <span>GST: {isRegisteredGST ? gstNumber : "Not registered"}</span>
+                    <span>Student Loan: {hasStudentLoan ? "Yes" : "No"}</span>
+                    <span>ACC Levy: {hasACCLevy ? "Yes" : "No"}</span>
+                    <span>KiwiSaver: {hasKiwiSaver ? "Yes" : "No"}</span>
+                    <span>Donations: {donations.length}</span>
+                    <span>IRD Connected: {irdAuthorityGranted ? "✓" : "✗"}</span>
+                    <span>Bank Connected: {bankAuthorityGranted ? "✓" : "✗"}</span>
+                    <span>Identity: {identityType ? identityType.replace("_", " ") : "N/A"}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleFinishRegistration}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white shadow-soft transition-all hover:bg-green-700 cursor-pointer"
+                >
+                  <FileCheck className="h-4 w-4" />
+                  Finish Registration
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ========== STEP CONTENT (hidden when finish screen shown) ========== */}
+          {!showFinishScreen && (
+          <div>
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
@@ -819,6 +876,7 @@ export default function OnboardingPage() {
               </button>
             )}
           </div>
+          </div>)}
         </div>
       </div>
     </div>
