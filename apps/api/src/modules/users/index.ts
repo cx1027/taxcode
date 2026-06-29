@@ -3,7 +3,6 @@ import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { users } from "../../db/schema";
-import { UserSchema } from "@taxcode/shared-types";
 
 export const userRoutes: FastifyPluginAsyncTypebox = async (app) => {
   // Get current user profile
@@ -13,7 +12,16 @@ export const userRoutes: FastifyPluginAsyncTypebox = async (app) => {
       onRequest: [app.authenticate],
       schema: {
         response: {
-          200: UserSchema,
+          200: Type.Object({
+            id: Type.String(),
+            email: Type.String(),
+            firstName: Type.String(),
+            lastName: Type.String(),
+            organizationId: Type.Union([Type.String(), Type.Null()]),
+            role: Type.String(),
+            createdAt: Type.String(),
+            updatedAt: Type.String(),
+          }),
         },
       },
     },
@@ -42,12 +50,21 @@ export const userRoutes: FastifyPluginAsyncTypebox = async (app) => {
           phone: Type.Optional(Type.String()),
         }),
         response: {
-          200: UserSchema,
+          200: Type.Object({
+            id: Type.String(),
+            email: Type.String(),
+            firstName: Type.String(),
+            lastName: Type.String(),
+            organizationId: Type.Union([Type.String(), Type.Null()]),
+            role: Type.String(),
+            createdAt: Type.String(),
+            updatedAt: Type.String(),
+          }),
         },
       },
     },
     async (request, reply) => {
-      const { firstName, lastName, phone } = request.body;
+      const { firstName, lastName, phone } = request.body as { firstName?: string; lastName?: string; phone?: string };
 
       const [updated] = await db
         .update(users)

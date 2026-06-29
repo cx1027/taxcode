@@ -1,24 +1,40 @@
 import { Type } from "@sinclair/typebox";
-import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-type-box";
+import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { users } from "../../db/schema";
-import { LoginSchema, RegisterSchema, AuthResponseSchema } from "@taxcode/shared-types";
 
 export const authRoutes: FastifyPluginAsyncTypebox = async (app) => {
   app.post(
     "/register",
     {
       schema: {
-        body: RegisterSchema,
+        body: Type.Object({
+          email: Type.String({ format: "email" }),
+          password: Type.String({ minLength: 8 }),
+          firstName: Type.String({ minLength: 1 }),
+          lastName: Type.String({ minLength: 1 }),
+        }),
         response: {
-          201: AuthResponseSchema,
+          201: Type.Object({
+            token: Type.String(),
+            user: Type.Object({
+              id: Type.String(),
+              email: Type.String(),
+              firstName: Type.String(),
+              lastName: Type.String(),
+              organizationId: Type.Union([Type.String(), Type.Null()]),
+              role: Type.String(),
+              createdAt: Type.String(),
+              updatedAt: Type.String(),
+            }),
+          }),
           400: Type.Object({ statusCode: Type.Number(), error: Type.String(), message: Type.String() }),
         },
       },
     },
     async (request, reply) => {
-      const { email, password, firstName, lastName } = request.body;
+      const { email, password, firstName, lastName } = request.body as { email: string; password: string; firstName: string; lastName: string };
 
       // Check if user exists
       const existing = await db.query.users.findFirst({
@@ -71,15 +87,30 @@ export const authRoutes: FastifyPluginAsyncTypebox = async (app) => {
     "/login",
     {
       schema: {
-        body: LoginSchema,
+        body: Type.Object({
+          email: Type.String({ format: "email" }),
+          password: Type.String({ minLength: 8 }),
+        }),
         response: {
-          200: AuthResponseSchema,
+          200: Type.Object({
+            token: Type.String(),
+            user: Type.Object({
+              id: Type.String(),
+              email: Type.String(),
+              firstName: Type.String(),
+              lastName: Type.String(),
+              organizationId: Type.Union([Type.String(), Type.Null()]),
+              role: Type.String(),
+              createdAt: Type.String(),
+              updatedAt: Type.String(),
+            }),
+          }),
           401: Type.Object({ statusCode: Type.Number(), error: Type.String(), message: Type.String() }),
         },
       },
     },
     async (request, reply) => {
-      const { email, password } = request.body;
+      const { email, password } = request.body as { email: string; password: string };
 
       const user = await db.query.users.findFirst({
         where: eq(users.email, email),

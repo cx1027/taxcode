@@ -1,4 +1,4 @@
-import { queues, type RecalculationJobData, type ExportJobData, type NotificationJobData, type ReminderJobData, type DocumentProcessingJobData } from "./queue";
+import { queues, type RecalculationJobData, type ExportJobData, type NotificationJobData, type ReminderJobData, type DocumentProcessingJobData } from "../queue";
 
 // ─── Producers ─────────────────────────────────────────────────────────────────
 

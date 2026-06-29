@@ -3,7 +3,29 @@ import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { filings, filingSections } from "../../db/schema";
-import { FilingSchema, CreateFilingSchema, UpdateFilingSchema, FilingStatusEnum } from "@taxcode/shared-types";
+
+const FilingSchema = Type.Object({
+  id: Type.String(),
+  organizationId: Type.Union([Type.String(), Type.Null()]),
+  taxYear: Type.Number(),
+  status: Type.Union([
+    Type.Literal("draft"),
+    Type.Literal("in_progress"),
+    Type.Literal("needs_attention"),
+    Type.Literal("ready_for_review"),
+    Type.Literal("submitted"),
+    Type.Literal("completed"),
+    Type.Literal("rejected"),
+    Type.Literal("error"),
+  ]),
+  taxpayerType: Type.Union([Type.Literal("individual"), Type.Literal("business")]),
+  totalIncome: Type.Union([Type.Number(), Type.Null()]),
+  totalDeductions: Type.Union([Type.Number(), Type.Null()]),
+  estimatedTax: Type.Union([Type.Number(), Type.Null()]),
+  filedAt: Type.Union([Type.String(), Type.Null()]),
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+});
 
 export const filingRoutes: FastifyPluginAsyncTypebox = async (app) => {
   // List filings
@@ -13,7 +35,7 @@ export const filingRoutes: FastifyPluginAsyncTypebox = async (app) => {
       onRequest: [app.authenticate],
       schema: {
         querystring: Type.Object({
-          status: Type.Optional(FilingStatusEnum),
+          status: Type.Optional(Type.String()),
           page: Type.Optional(Type.Number({ minimum: 1 })),
           pageSize: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
         }),
@@ -28,7 +50,7 @@ export const filingRoutes: FastifyPluginAsyncTypebox = async (app) => {
       },
     },
     async (request) => {
-      const { status, page = 1, pageSize = 20 } = request.query;
+      const { status, page = 1, pageSize = 20 } = request.query as { status?: string; page?: number; pageSize?: number };
       const offset = (page - 1) * pageSize;
 
       const conditions = [];
@@ -90,14 +112,17 @@ export const filingRoutes: FastifyPluginAsyncTypebox = async (app) => {
     {
       onRequest: [app.authenticate],
       schema: {
-        body: CreateFilingSchema,
+        body: Type.Object({
+          taxYear: Type.Number(),
+          taxpayerType: Type.Union([Type.Literal("individual"), Type.Literal("business")]),
+        }),
         response: {
           201: FilingSchema,
         },
       },
     },
     async (request, reply) => {
-      const { taxYear, taxpayerType } = request.body;
+      const { taxYear, taxpayerType } = request.body as { taxYear: number; taxpayerType: string };
 
       const [newFiling] = await db
         .insert(filings)
@@ -120,7 +145,12 @@ export const filingRoutes: FastifyPluginAsyncTypebox = async (app) => {
       onRequest: [app.authenticate],
       schema: {
         params: Type.Object({ id: Type.String() }),
-        body: UpdateFilingSchema,
+        body: Type.Object({
+          status: Type.Optional(Type.String()),
+          totalIncome: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+          totalDeductions: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+          estimatedTax: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+        }),
         response: {
           200: FilingSchema,
         },
@@ -176,7 +206,7 @@ export const filingRoutes: FastifyPluginAsyncTypebox = async (app) => {
     },
     async (request, reply) => {
       const { id, sectionType } = request.params;
-      const { data } = request.body;
+      const { data } = request.body as { data: Record<string, unknown> };
 
       // Upsert section
       const [section] = await db
@@ -184,14 +214,14 @@ export const filingRoutes: FastifyPluginAsyncTypebox = async (app) => {
         .values({
           filingId: id,
           sectionType,
-          data: data as Record<string, unknown>,
+          data: data,
           isComplete: true,
           completedAt: new Date().toISOString(),
         })
         .onConflictDoUpdate({
           target: [filingSections.filingId, filingSections.sectionType],
           set: {
-            data: data as Record<string, unknown>,
+            data: data,
             isComplete: true,
             completedAt: new Date().toISOString(),
           },

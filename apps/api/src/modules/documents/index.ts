@@ -3,7 +3,25 @@ import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "../../db";
 import { documents } from "../../db/schema";
-import { DocumentSchema, UploadDocumentSchema, DocumentStatusEnum } from "@taxcode/shared-types";
+
+const DocumentSchema = Type.Object({
+  id: Type.String(),
+  filingId: Type.String(),
+  name: Type.String(),
+  type: Type.String(),
+  size: Type.Number(),
+  status: Type.Union([
+    Type.Literal("pending"),
+    Type.Literal("processing"),
+    Type.Literal("uploaded"),
+    Type.Literal("verified"),
+    Type.Literal("rejected"),
+  ]),
+  url: Type.Union([Type.String(), Type.Null()]),
+  uploadedAt: Type.Union([Type.String(), Type.Null()]),
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+});
 
 export const documentRoutes: FastifyPluginAsyncTypebox = async (app) => {
   // List documents
@@ -14,7 +32,7 @@ export const documentRoutes: FastifyPluginAsyncTypebox = async (app) => {
       schema: {
         querystring: Type.Object({
           filingId: Type.Optional(Type.String()),
-          status: Type.Optional(DocumentStatusEnum),
+          status: Type.Optional(Type.String()),
         }),
         response: {
           200: Type.Array(DocumentSchema),
@@ -22,7 +40,7 @@ export const documentRoutes: FastifyPluginAsyncTypebox = async (app) => {
       },
     },
     async (request) => {
-      const { filingId, status } = request.query;
+      const { filingId, status } = request.query as { filingId?: string; status?: string };
 
       const conditions = [];
       if (filingId) conditions.push(eq(documents.filingId, filingId));
@@ -71,12 +89,17 @@ export const documentRoutes: FastifyPluginAsyncTypebox = async (app) => {
     {
       onRequest: [app.authenticate],
       schema: {
-        body: UploadDocumentSchema,
+        body: Type.Object({
+          filingId: Type.String(),
+          type: Type.String(),
+          name: Type.String(),
+          size: Type.Number(),
+        }),
         response: { 201: DocumentSchema },
       },
     },
     async (request, reply) => {
-      const { filingId, type, name, size } = request.body;
+      const { filingId, type, name, size } = request.body as { filingId: string; type: string; name: string; size: number };
 
       const [newDoc] = await db
         .insert(documents)
@@ -100,13 +123,13 @@ export const documentRoutes: FastifyPluginAsyncTypebox = async (app) => {
       onRequest: [app.authenticate],
       schema: {
         params: Type.Object({ id: Type.String() }),
-        body: Type.Object({ status: DocumentStatusEnum }),
+        body: Type.Object({ status: Type.String() }),
         response: { 200: DocumentSchema },
       },
     },
     async (request, reply) => {
       const { id } = request.params;
-      const { status } = request.body;
+      const { status } = request.body as { status: string };
 
       const [updated] = await db
         .update(documents)

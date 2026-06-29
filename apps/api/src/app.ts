@@ -4,6 +4,7 @@ import jwt from "@fastify/jwt";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { env } from "./config";
+import { authPlugin } from "./plugins/auth";
 import { errorHandler } from "./plugins/error-handler";
 import { healthRoutes } from "./modules/health";
 import { authRoutes } from "./modules/auth";
@@ -35,6 +36,8 @@ export async function buildApp(): Promise<FastifyInstance> {
     secret: env.JWT_SECRET,
     sign: { expiresIn: env.JWT_EXPIRES_IN },
   });
+
+  await app.register(authPlugin);
 
   // Custom error handler
   app.setErrorHandler(errorHandler);
