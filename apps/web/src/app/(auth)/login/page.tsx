@@ -7,8 +7,8 @@ export default function LoginPage() {
  const [isLoading, setIsLoading] = useState(false);
 
  async function handleGoogleSignIn() {
- setIsLoading(true);
- await signIn("google", { callbackUrl: "/" });
+  setIsLoading(true);
+  await signIn("google", { callbackUrl: "/onboarding" });
  }
 
  return (
