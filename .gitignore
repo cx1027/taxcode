@@ -1,43 +1,35 @@
-# Dependencies
-node_modules/
 
 # Build outputs
-.next/
-dist/
-.output/
-
+# Cargo
+# Dependencies
 # Environment
-.env
-.env.local
-.env.*.local
-
 # IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
 # Logs
+# OS
+# Postgres data
+# Storage (dev)
+# Turbo
+# TypeScript
 *.log
+*.swo
+*.swp
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*.local
+.env.local
+.idea/
+.next/
+.output/
+.turbo/
+.vscode/
+Thumbs.db
+dist/
+node_modules/
 npm-debug.log*
 pnpm-debug.log*
-
-# Turbo
-.turbo/
-
-# Storage (dev)
-storage/
-
-# TypeScript
-*.tsbuildinfo
-
-# Cargo
-target/
-
-# Postgres data
 postgres_data/
 redis_data/
+secret json
+storage/
+target/

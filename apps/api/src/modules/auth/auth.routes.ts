@@ -185,6 +185,98 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get("/me", { onRequest: [fastify.authenticate] }, async (request) => {
     return { user: request.user };
   });
+
+  fastify.post(
+    "/google",
+    {
+      schema: {
+        body: {
+          type: "object",
+          required: ["googleId", "email", "firstName", "lastName"],
+          properties: {
+            googleId: { type: "string" },
+            email: { type: "string", format: "email" },
+            firstName: { type: "string" },
+            lastName: { type: "string" },
+            picture: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            required: ["token", "user"],
+            properties: {
+              token: { type: "string" },
+              user: {
+                type: "object",
+                required: ["id", "email", "firstName", "lastName", "organizationId", "role", "createdAt", "updatedAt"],
+                properties: {
+                  id: { type: "string" },
+                  email: { type: "string", format: "email" },
+                  firstName: { type: "string" },
+                  lastName: { type: "string" },
+                  organizationId: { type: ["string", "null"] },
+                  role: { type: "string" },
+                  createdAt: { type: "string" },
+                  updatedAt: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { googleId, email, firstName, lastName, picture } = request.body as {
+        googleId: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        picture?: string;
+      };
+
+      const existing = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      let user = existing;
+
+      if (!user) {
+        const [created] = await db
+          .insert(users)
+          .values({
+            email,
+            passwordHash: `google:${googleId}`,
+            firstName,
+            lastName,
+          })
+          .returning();
+        user = created;
+      }
+
+      const token = fastify.jwt.sign({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        googleId,
+        picture,
+      });
+
+      return reply.send({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          organizationId: user.organizationId,
+          role: user.role,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      });
+    }
+  );
 };
 
 declare module "fastify" {
