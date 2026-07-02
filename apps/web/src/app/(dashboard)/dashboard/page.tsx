@@ -10,6 +10,9 @@ import {
   TrendingUp,
   Users,
   FileCheck,
+  TrendingDown,
+  DollarSign,
+  ArrowUpRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
 import { StatCard } from "@/components/ui";
@@ -47,6 +50,13 @@ const MOCK_ACTIVITIES = [
   { id: 2, text: "2024 Federal Return: Deduction section completed", time: "1 hour ago" },
   { id: 3, text: "2023 State Return marked Ready for Review", time: "3 hours ago" },
   { id: 4, text: "2023 Federal Return: Filing accepted by IRS", time: "2 days ago" },
+];
+
+const MOCK_INCOME = [
+  { id: 1, category: "Salaries & Wages", amount: "$48,500.00", icon: "💼" },
+  { id: 2, category: "Self-Employment", amount: "$12,000.00", icon: "💻" },
+  { id: 3, category: "Interest", amount: "$320.50", icon: "🏦" },
+  { id: 4, category: "Dividends", amount: "$1,200.00", icon: "📈" },
 ];
 
 export default function DashboardPage() {
@@ -141,6 +151,57 @@ export default function DashboardPage() {
 
         {/* Right column */}
         <div className="space-y-4">
+          {/* Income summary */}
+          <div className="rounded-xl border border-border bg-card shadow-soft">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-sm font-semibold text-foreground">Income</h2>
+              <Link
+                href="/income"
+                className="flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                View all
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="divide-y divide-border">
+              {MOCK_INCOME.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between px-5 py-3.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-base">
+                      {item.icon}
+                    </div>
+                    <span className="text-sm font-medium text-foreground">
+                      {item.category}
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">
+                    {item.amount}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border px-5 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <DollarSign className="h-4 w-4" strokeWidth={2.5} />
+                  Total Income
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-foreground">
+                    $62,020.50
+                  </span>
+                  <div className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5">
+                    <TrendingUp className="h-3 w-3 text-success" strokeWidth={2.5} />
+                    <span className="text-xs font-medium text-success">+8%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Attention needed */}
           <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
             <div className="flex items-center gap-2">
