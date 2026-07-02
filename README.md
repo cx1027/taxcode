@@ -53,6 +53,12 @@ docker compose up -d
 
 This starts PostgreSQL (port 5432) and Redis (port 6379).
 
+**Database connection:**
+| Service | Host | Port | User | Password | Database |
+|---|---|---|---|---|---|
+| PostgreSQL | `localhost` | `5432` | `taxcode` | `taxcode_local` | `taxcode` |
+| Redis | `localhost` | `6379` | — | — | — |
+
 ### 3. Configure environment
 
 ```bash
